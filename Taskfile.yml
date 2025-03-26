@@ -1,0 +1,26 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  GREETING: Hello, World!
+
+tasks:
+  init:
+    cmds:
+      - terraform init
+    dir: infrastructure
+  plan:
+    cmds:
+      - terraform plan
+    dir: infrastructure
+
+  apply:
+    dir: infrastructure
+    cmds:
+      - terraform apply -auto-approve
+
+  destroy:
+    dir: infrastructure
+    cmds:
+      - terraform destroy -auto-approve
