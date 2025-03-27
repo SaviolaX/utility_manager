@@ -49,7 +49,7 @@ resource "aws_s3_object" "frontend_object" {
   for_each = fileset("../frontend/dist", "**/*")
 
   key    = each.value
-  source = "../dist/${each.value}"
+  source = "../frontend/dist/${each.value}"
 
   # Set the content type for the files
   content_type = lookup({
