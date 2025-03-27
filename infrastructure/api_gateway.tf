@@ -21,8 +21,9 @@ resource "aws_api_gateway_method" "utility_manager_api_gateway_method" {
   rest_api_id      = aws_api_gateway_rest_api.utility_manager_api_gateway.id
   resource_id      = aws_api_gateway_resource.utility_manager_api_gateway_resource.id
   http_method      = "GET"
-  authorization    = "NONE"
+  authorization    = "COGNITO_USER_POOL"
   api_key_required = false
+  authorizer_id    = aws_api_gateway_authorizer.utility_manager_api_gateway_authorizer.id
 
   depends_on = [aws_api_gateway_resource.utility_manager_api_gateway_resource]
 }
@@ -76,7 +77,8 @@ resource "aws_api_gateway_method" "utility_manager_api_gateway_method_options" {
   rest_api_id   = aws_api_gateway_rest_api.utility_manager_api_gateway.id
   resource_id   = aws_api_gateway_resource.utility_manager_api_gateway_resource.id
   http_method   = "OPTIONS"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.utility_manager_api_gateway_authorizer.id
 }
 
 # Create integration for the OPTIONS method
@@ -143,6 +145,14 @@ resource "aws_api_gateway_deployment" "utility_manager_api_gateway_deployment" {
     aws_api_gateway_integration.utility_manager_api_gateway_integration,
     aws_api_gateway_integration.utility_manager_api_gateway_integration_options
   ]
+}
+
+resource "aws_api_gateway_authorizer" "utility_manager_api_gateway_authorizer" {
+  name            = "utility_manager_authorizer"
+  rest_api_id     = aws_api_gateway_rest_api.utility_manager_api_gateway.id
+  type            = "COGNITO_USER_POOLS"
+  provider_arns   = [aws_cognito_user_pool.utility_manager_user_pool.arn]
+  identity_source = "method.request.header.Authorization"
 }
 
 # Create a stage for the API Gateway
