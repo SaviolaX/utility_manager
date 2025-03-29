@@ -24,3 +24,8 @@ tasks:
     dir: infrastructure
     cmds:
       - terraform destroy -auto-approve
+
+  outputs:
+    dir: infrastructure
+    cmds:
+      - terraform output
