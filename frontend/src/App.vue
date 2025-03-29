@@ -25,14 +25,13 @@ html {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #585858;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  background-color: #F9FAFB;
 }
 .content-wrapper {
   padding: 20px;
-  color: white;
   text-align: center;
 }
 .content-wrapper h1 {
