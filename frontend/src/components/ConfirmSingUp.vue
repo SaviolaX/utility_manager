@@ -1,6 +1,7 @@
 <template>
-  <div>
+  <div class="confirm-signup-container">
     <h2>Confirm Sign Up</h2>
+    <p>Please enter the confirmation code sent to your email.</p>
     <input v-model="code" placeholder="Confirmation Code" />
     <button @click="confirmSignUpUser">Confirm</button>
     <p v-if="error">{{ error }}</p>
@@ -49,21 +50,7 @@ export default {
       error: null,
     };
   },
-  // async mounted() {
-  //   try {
-  //     const userId = this.route.query.userId;
-  //     const user = await getCurrentUser();
-  //     if (userId === null) {
-  //       this.router.push("/");
-  //     }
-  //     if (user) {
-  //       console.log("User is authenticated. Redirect to Home page.");
-  //       this.router.push("/");
-  //     }
-  //   } catch (err) {
-  //     console.log("No user on mounted in ConfirmPage: ", err);
-  //   }
-  // },
+
   methods: {
     async confirmSignUpUser() {
       try {
@@ -82,3 +69,24 @@ export default {
   },
 };
 </script>
+<style>
+.confirm-signup-container {
+  text-align: center;
+  margin-top: 50px;
+}
+.confirm-signup-container input {
+  margin: 10px;
+  padding: 5px;
+}
+.confirm-signup-container button {
+  padding: 5px 10px;
+  border: none;
+  cursor: pointer;
+}
+.confirm-signup-container p {
+  color: white;
+}
+.confirm-signup-container h2 {
+  color: white;
+}
+</style>
