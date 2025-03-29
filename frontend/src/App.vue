@@ -1,23 +1,13 @@
 <template>
-  <NavBar />
-
-  <div class="content-wrapper">
-    <h1>Welcome to Vue</h1>
-    <div v-if="response">
-      {{ response }}
-    </div>
-    <p v-else>No data...</p>
-    <button @click="fetchData">Fetch Data</button>
+  <div>
+    <NavBar />
+    <router-view />
   </div>
 </template>
 
 <script>
 import NavBar from "./components/NavBar.vue";
-
-const HELLO_ENDPOINT =
-  "https://46k9mn6ytl.execute-api.eu-central-1.amazonaws.com/dev/hello";
-
-const TEST_ENDPOINT = "https://jsonplaceholder.typicode.com/todos/1";
+import "@aws-amplify/ui-vue/styles.css";
 
 export default {
   name: "App",
@@ -25,22 +15,7 @@ export default {
     NavBar,
   },
 
-  data() {
-    return {
-      response: null,
-    };
-  },
-
-  methods: {
-    async fetchData() {
-      const response = await fetch(HELLO_ENDPOINT, {
-        method: "GET",
-      });
-      const data = await response.json();
-      console.log(data);
-      this.response = data;
-    },
-  },
+  setup() {},
 };
 </script>
 
