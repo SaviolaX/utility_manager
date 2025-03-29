@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="signup-container">
     <h2>Sign Up</h2>
     <input v-model="email" placeholder="Email" />
     <input v-model="password" type="password" placeholder="Password" />
@@ -9,6 +9,10 @@
       placeholder="Confirm password"
     />
     <button @click="signUpUser">Sign Up</button>
+    <p>
+      If you already have an account,
+      <router-link to="/signin">Sign in</router-link>.
+    </p>
     <p v-if="error">{{ error }}</p>
   </div>
 </template>
@@ -66,3 +70,34 @@ export default {
   },
 };
 </script>
+<style>
+.signup-container {
+  text-align: center;
+  margin-top: 50px;
+}
+.signup-container a {
+  color: #ebdbb2; /* Gruvbox light beige for links */
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 18px;
+  transition: color 0.3s ease; /* Smooth hover transition */
+}
+.signup-container input {
+  display: block;
+  margin: 10px auto;
+  padding: 10px;
+  width: 200px;
+}
+.signup-container button {
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+}
+.signup-container h2 {
+  color: white;
+  font-size: 2em;
+}
+.signup-container p {
+  color: white;
+}
+</style>

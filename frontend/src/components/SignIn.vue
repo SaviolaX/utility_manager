@@ -1,14 +1,15 @@
 <template>
-  <div>
+  <div class="signin-container">
     <h2>Login</h2>
     <input v-model="email" placeholder="Email" />
     <input v-model="password" type="password" placeholder="Password" />
     <button @click="signInUser">Sign In</button>
+    <p>If you don't have an account, <router-link to="/signup">Register</router-link>.</p>
     <p v-if="error">{{ error }}</p>
   </div>
 </template>
   
-  <script>
+<script>
 import { signIn, getCurrentUser } from "aws-amplify/auth";
 import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
@@ -68,3 +69,34 @@ export default {
   },
 };
 </script>
+<style>
+.signin-container {
+  text-align: center;
+  margin-top: 50px;
+}
+.signin-container a {
+  color: #ebdbb2; /* Gruvbox light beige for links */
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 18px;
+  transition: color 0.3s ease; /* Smooth hover transition */
+}
+.signin-container input {
+  display: block;
+  margin: 10px auto;
+  padding: 10px;
+  width: 200px;
+}
+.signin-container button {
+  margin: 10px auto;
+  padding: 10px;
+  width: 100px;
+}
+.signin-container h2 {
+  color: white;
+  font-size: 2em;
+}
+.signin-container p {
+  color: white;
+}
+</style>
