@@ -4,7 +4,10 @@
     <input v-model="email" placeholder="Email" />
     <input v-model="password" type="password" placeholder="Password" />
     <button @click="signInUser">Sign In</button>
-    <p>If you don't have an account, <router-link to="/signup">Register</router-link>.</p>
+    <p>
+      If you don't have an account,
+      <router-link to="/signup">Register</router-link>.
+    </p>
     <p v-if="error">{{ error }}</p>
   </div>
 </template>
@@ -51,15 +54,13 @@ export default {
 
         const user = await getCurrentUser();
         // Set user data in the store
-        this.authStore.setUser(
-          {
+        this.authStore.setUser({
+          user: {
+            email: user.signInDetails.loginId,
             username: user.username,
-            email: user.signInDetails?.loginId,
           },
-          {
-            isLoggedIn: true,
-          }
-        );
+          isLoggedIn: true,
+        });
         this.router.push("/"); // Redirect to home or dashboard
       } catch (err) {
         this.error = err.message;
