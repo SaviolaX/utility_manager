@@ -28,7 +28,7 @@ html {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  background-color: #F9FAFB;
+  background-color: #1f2937;
 }
 .content-wrapper {
   padding: 20px;
