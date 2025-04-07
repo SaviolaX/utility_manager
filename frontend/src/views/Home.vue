@@ -1,5 +1,6 @@
 <template>
-  <div class="home-container">
+  <LoadingSpinner v-if="isLoading" />
+  <div v-else class="home-container">
     <div class="home-container-input-block">
       <table>
         <thead>
@@ -27,28 +28,7 @@
           </tr>
         </tbody>
       </table>
-      <table>
-        <thead>
-          <tr>
-            <th>Heat</th>
-            <th>Heat Price</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>
-              <input
-                type="number"
-                placeholder="Heat numbers"
-                v-model="heatInput"
-              />
-            </td>
-            <td>
-              <input type="number" placeholder="$/m3" v-model="heatPrice" />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+
       <table>
         <thead>
           <tr>
@@ -152,202 +132,313 @@
     </div>
     <div v-if="showResultBlock" class="home-container-result-block">
       <div class="show-result-button-block">
-        <button @click="closeResultBlock" class="close-show-result-block-button">X</button>
+        <button
+          @click="closeResultBlock"
+          class="close-show-result-block-button"
+        >
+          X
+        </button>
       </div>
-      <p v-if="objectDetails">{{ objectDetails }}</p>
+      <div v-if="objectDetails" style="display: flex">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Category</th>
+              <th>New input</th>
+              <th>Previous input</th>
+              <th>Consumption</th>
+              <th>Price/unit</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Gas</td>
+              <td></td>
+              <td>{{ objectDetails.utilities.gas.current }}</td>
+              <td>{{ objectDetails.utilities.gas.previous }}</td>
+              <td>{{ objectDetails.utilities.gas.consumption }}</td>
+              <td>{{ objectDetails.prices.gas }}</td>
+              <td>{{ objectDetails.cost.gas }}</td>
+            </tr>
+            <tr>
+              <td>Water</td>
+              <td>Cold kitchen</td>
+              <td>{{ objectDetails.utilities.water.cold.kitchen.current }}</td>
+              <td>{{ objectDetails.utilities.water.cold.kitchen.previous }}</td>
+              <td>
+                {{ objectDetails.utilities.water.cold.kitchen.consumption }}
+              </td>
+              <td>{{ objectDetails.prices.water.cold }}</td>
+              <td>{{ objectDetails.cost.water.kitchen_cold }}</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td>Cold bathroom</td>
+              <td>{{ objectDetails.utilities.water.cold.bathroom.current }}</td>
+              <td>
+                {{ objectDetails.utilities.water.cold.bathroom.previous }}
+              </td>
+              <td>
+                {{ objectDetails.utilities.water.cold.bathroom.consumption }}
+              </td>
+              <td>{{ objectDetails.prices.water.cold }}</td>
+              <td>{{ objectDetails.cost.water.bathroom_cold }}</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td>Hot kitchen</td>
+              <td>{{ objectDetails.utilities.water.hot.kitchen.current }}</td>
+              <td>
+                {{ objectDetails.utilities.water.hot.kitchen.previous }}
+              </td>
+              <td>
+                {{ objectDetails.utilities.water.hot.kitchen.consumption }}
+              </td>
+              <td>{{ objectDetails.prices.water.hot }}</td>
+              <td>{{ objectDetails.cost.water.kitchen_hot }}</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td>Hot bathroom</td>
+              <td>{{ objectDetails.utilities.water.hot.bathroom.current }}</td>
+              <td>
+                {{ objectDetails.utilities.water.hot.bathroom.previous }}
+              </td>
+              <td>
+                {{ objectDetails.utilities.water.hot.bathroom.consumption }}
+              </td>
+              <td>{{ objectDetails.prices.water.hot }}</td>
+              <td>{{ objectDetails.cost.water.bathroom_hot }}</td>
+            </tr>
+            <tr>
+              <td>Electricity</td>
+              <td>T1</td>
+              <td>{{ objectDetails.utilities.electricity.t1.current }}</td>
+              <td>{{ objectDetails.utilities.electricity.t1.previous }}</td>
+              <td>
+                {{ objectDetails.utilities.electricity.t1.consumption }}
+              </td>
+              <td>{{ objectDetails.prices.electricity.t1 }}</td>
+              <td>{{ objectDetails.cost.electricity.t1 }}</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td>T2</td>
+              <td>{{ objectDetails.utilities.electricity.t2.current }}</td>
+              <td>{{ objectDetails.utilities.electricity.t2.previous }}</td>
+              <td>
+                {{ objectDetails.utilities.electricity.t2.consumption }}
+              </td>
+              <td>{{ objectDetails.prices.electricity.t2 }}</td>
+              <td>{{ objectDetails.cost.electricity.t2 }}</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>Total cost:</td>
+              <td>{{ objectDetails.total_cost }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div></div>
     </div>
     <div class="home-container-history-block">
-      <div v-for="object in mockData" :key="object" class="history-object">
-        <button @click="getObjectResult(object.id)">{{ object.date }}</button>
+      <div v-for="object in resp" :key="object" class="history-object">
+        <button @click="getObjectResult(object.id)">
+          {{ object.date }}
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import { useAuthStore } from "@/stores/auth";
-import { useRouter } from "vue-router";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 
 export default {
   name: "Home",
+  components: {
+    LoadingSpinner,
+  },
 
   setup() {
     const authStore = useAuthStore();
     const router = useRouter();
     const COUNT_URL =
-      "https://a8lx65txd8.execute-api.eu-central-1.amazonaws.com/dev/count";
+      "https://rtem6et0wh.execute-api.eu-central-1.amazonaws.com/dev/count";
+    const resp = ref(null);
 
-    const mockData = [
-      {
-        id: 1,
-        date: "22.03.2025",
-        body: {
-          gas: {
-            input: 100,
-            price: 1.5,
-            distribution: 0.5,
-          },
-          heat: {
-            input: 200,
-            price: 2.0,
-          },
-          electricity: {
-            t1Input: 300,
-            t1Price: 0.3,
-            t2Input: 400,
-            t2Price: 0.4,
-          },
-          water: {
-            kitchen: {
-              coldInput: 50,
-              hotInput: 60,
-              coldPrice: 0.2,
-              hotPrice: 0.3,
-            },
-            bathroom: {
-              coldInput: 70,
-              hotInput: 80,
-              coldPrice: 0.25,
-              hotPrice: 0.35,
-            },
-          },
-        },
-      },
-      {
-        id: 2,
-        date: "22.02.2025",
-        body: {
-          gas: {
-            input: 110,
-            price: 1.6,
-            distribution: 0.6,
-          },
-          heat: {
-            input: 210,
-            price: 2.1,
-          },
-          electricity: {
-            t1Input: 310,
-            t1Price: 0.31,
-            t2Input: 410,
-            t2Price: 0.41,
-          },
-          water: {
-            kitchen: {
-              coldInput: 55,
-              hotInput: 65,
-              coldPrice: 0.22,
-              hotPrice: 0.32,
-            },
-            bathroom: {
-              coldInput: 75,
-              hotInput: 85,
-              coldPrice: 0.27,
-              hotPrice: 0.37,
-            },
-          },
-        },
-      },
-    ];
+    // Input data
     const gasInput = ref(null);
-    const gasPrice = ref(null);
-    const gasDistribution = ref(null);
     const waterInput = ref({
       kitchen: { cold: null, hot: null },
       bathroom: { cold: null, hot: null },
     });
+    const electricityInput = ref(null);
+    const t1electricityInput = ref(null);
+    const t2electricityInput = ref(null);
+
+    // Prices
+    const gasPrice = ref(null);
+    const gasDistribution = ref(null);
     const waterColdPrice = ref(null);
     const waterHotPrice = ref(null);
-    const heatInput = ref(null);
-    const heatPrice = ref(null);
-    const electricityInput = ref(null);
     const electricityPrice = ref(null);
-    const t1electricityInput = ref(null);
     const t1electricityPrice = ref(null);
-    const t2electricityInput = ref(null);
     const t2electricityPrice = ref(null);
 
     const objectDetails = ref(null);
     const showResultBlock = ref(false);
+    const isLoading = ref(true);
 
     return {
       authStore,
       router,
       COUNT_URL,
+
+      // Inputs
       waterInput,
       gasInput,
+      t1electricityInput,
+      t2electricityInput,
+      electricityInput,
+      // Prices
       gasPrice,
       gasDistribution,
       waterColdPrice,
       waterHotPrice,
-      heatInput,
-      heatPrice,
-      electricityInput,
       electricityPrice,
-      t1electricityInput,
       t1electricityPrice,
-      t2electricityInput,
       t2electricityPrice,
-      mockData,
+
       objectDetails,
       showResultBlock,
+      resp,
+      isLoading,
     };
   },
-  //TODO: to think abot getCurrentUser and fetchAuthSession
+  watch: {
+    // Set price values from previous month
+    resp(newValue) {
+      if (newValue.length !== 0) {
+        const sortedData = this.sortByDate(newValue, "desc");
+        const lastObjByDate = sortedData[0];
+        this.gasPrice = lastObjByDate.prices.gas;
+        this.gasDistribution = lastObjByDate.prices.gas_distribution;
+        this.t1electricityPrice = lastObjByDate.prices.electricity.t1;
+        this.t2electricityPrice = lastObjByDate.prices.electricity.t2;
+        this.waterColdPrice = lastObjByDate.prices.water.cold;
+        this.waterHotPrice = lastObjByDate.prices.water.hot;
+      }
+    },
+  },
   async mounted() {
     try {
-      const session = await fetchAuthSession();
-
-      if (session) {
-        this.authStore.setUser({
-          user: {
-            username: session.userSub,
-            email: session.tokens.signInDetails?.loginId,
-          },
-          isLoggedIn: true,
-          authToken: session.tokens.idToken.toString(),
-        });
-      }
+      await this.getCurrentSession();
+      await this.getData();
     } catch (err) {
-      this.router.push("/signin");
-      console.log("No user on mounted in Home.");
+      console.log("Error in mounted:", err);
+      this.isLoading = false;
+    } finally {
+      this.isLoading = false;
     }
   },
   methods: {
+    sortByDate(dataLst, order = "asc") {
+      const sorted = [...dataLst]; // Avoid mutating the original array
+      return order === "desc"
+        ? sorted.sort((a, b) => new Date(b.date) - new Date(a.date))
+        : sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
+    },
+    async getCurrentSession() {
+      try {
+        const session = await fetchAuthSession();
+
+        if (session) {
+          this.setUserSession(session);
+        }
+      } catch (err) {
+        this.redirectToSignIn();
+        console.log("No user on mounted in Home.");
+      }
+    },
+    setUserSession(session) {
+      // Store user in Pinia reacitve store
+      this.authStore.setUser({
+        user: {
+          username: session.userSub,
+          email: session.tokens.signInDetails?.loginId,
+        },
+        isLoggedIn: true,
+        authToken: session.tokens.idToken.toString(),
+      });
+    },
+    redirectToSignIn() {
+      this.router.push("/signin");
+    },
     async sendInputData() {
       // This method will handle the submission of input data
-      const inputData = {
-        gasInput: this.gasInput,
-        gasPrice: this.gasPrice,
-        gasDistribution: this.gasDistribution,
-        waterInput: this.waterInput,
-        waterColdPrice: this.waterColdPrice,
-        waterHotPrice: this.waterHotPrice,
-        heatInput: this.heatInput,
-        heatPrice: this.heatPrice,
-        electricityInput: this.electricityInput,
-        electricityPrice: this.electricityPrice,
-        t1electricityInput: this.t1electricityInput,
-        t1electricityPrice: this.t1electricityPrice,
-        t2electricityInput: this.t2electricityInput,
-        t2electricityPrice: this.t2electricityPrice,
+      const date = new Date().toJSON().slice(0, 10);
+
+      const payload = {
+        date: date,
+        utilities: {
+          gas: this.gasInput,
+          electricity: {
+            t1: this.t1electricityInput,
+            t2: this.t2electricityInput,
+          },
+          water: {
+            cold: {
+              kitchen: this.waterInput.kitchen.cold,
+              bathroom: this.waterInput.bathroom.cold,
+            },
+            hot: {
+              kitchen: this.waterInput.kitchen.hot,
+              bathroom: this.waterInput.bathroom.hot,
+            },
+          },
+        },
+        prices: {
+          gas: this.gasPrice,
+          gas_distribution: this.gasDistribution,
+          electricity: {
+            t1: this.t1electricityPrice,
+            t2: this.t2electricityPrice,
+          },
+          water: {
+            cold: this.waterColdPrice,
+            hot: this.waterHotPrice,
+          },
+        },
       };
-      console.log("Submitted data:", inputData);
+
+      console.log("Submitted data:", payload);
       const response = await fetch(this.COUNT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${this.authStore.authToken}`,
         },
-        body: JSON.stringify(inputData),
+        body: JSON.stringify({
+          body: { payload },
+        }),
       });
       const data = await response.json();
-      this.resp = data;
+      // this.resp = data;
       console.log("Response from server:", data);
     },
-    async getReq() {
+    async getData() {
       const resp = await fetch(this.COUNT_URL, {
         method: "GET",
         headers: {
@@ -356,11 +447,13 @@ export default {
         },
       });
       const data = await resp.json();
-      this.resp = JSON.parse(data.body);
-      console.log("Response from server:", this.resp);
+      console.log("Data from server:", data);
+      this.resp = this.sortByDate(data.utilities_list, "desc");
+      // this.resp = JSON.parse(data.utility_counts);
     },
     getObjectResult(id) {
-      this.objectDetails = this.mockData.find((object) => object.id === id);
+      this.objectDetails = this.resp.find((object) => object.id === id);
+      console.log("Object details:", this.objectDetails);
       this.showResultBlock = true;
     },
     closeResultBlock() {
