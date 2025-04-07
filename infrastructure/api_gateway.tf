@@ -46,8 +46,17 @@ resource "aws_api_gateway_integration" "utility_manager_api_gateway_get_integrat
   resource_id             = aws_api_gateway_resource.utility_manager_api_gateway_resource__count.id
   http_method             = aws_api_gateway_method.utility_manager_api_gateway_get_method.http_method
   integration_http_method = "POST"
-  type                    = "AWS"
+  type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.utility_manager_lambda_function.invoke_arn
+
+  #   request_templates = {
+  #     "application/json" = <<EOF
+  # {
+  #   "httpMethod": "$context.httpMethod",
+  #   "resourcePath": "$context.resourcePath"
+  # }
+  # EOF
+  #   }
 
   depends_on = [
     aws_api_gateway_method.utility_manager_api_gateway_get_method,
@@ -63,7 +72,7 @@ resource "aws_api_gateway_integration_response" "utility_manager_api_gateway_get
   status_code = aws_api_gateway_method_response.utility_manager_api_gateway_get_method_response.status_code
 
   response_parameters = {
-    "method.response.header.Access-Control-Allow-Origin" = "'*'"
+    "method.response.header.Access-Control-Allow-Origin" = "'*'",
   }
 
   depends_on = [aws_api_gateway_integration.utility_manager_api_gateway_get_integration]
@@ -103,7 +112,7 @@ resource "aws_api_gateway_integration" "utility_manager_api_gateway_post_integra
   resource_id             = aws_api_gateway_resource.utility_manager_api_gateway_resource__count.id
   http_method             = aws_api_gateway_method.utility_manager_api_gateway_post_method.http_method
   integration_http_method = "POST"
-  type                    = "AWS"
+  type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.utility_manager_lambda_function.invoke_arn
 
   depends_on = [
@@ -143,6 +152,7 @@ resource "aws_api_gateway_integration" "utility_manager_api_gateway_post_method_
   resource_id = aws_api_gateway_resource.utility_manager_api_gateway_resource__count.id
   http_method = aws_api_gateway_method.utility_manager_api_gateway_post_method_options.http_method
   type        = "MOCK"
+
   request_templates = {
     "application/json" = "{\"statusCode\": 200}"
   }
@@ -158,7 +168,7 @@ resource "aws_api_gateway_method_response" "utility_manager_api_gateway_post_met
   response_parameters = {
     "method.response.header.Access-Control-Allow-Origin"  = true,
     "method.response.header.Access-Control-Allow-Methods" = true,
-    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Headers" = true,
   }
 }
 
@@ -172,7 +182,7 @@ resource "aws_api_gateway_integration_response" "utility_manager_api_gateway_int
   response_parameters = {
     "method.response.header.Access-Control-Allow-Origin"  = "'*'",
     "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'",
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
   }
 
   depends_on = [aws_api_gateway_integration.utility_manager_api_gateway_post_method_integration_options]
