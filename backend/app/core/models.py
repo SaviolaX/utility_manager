@@ -273,3 +273,46 @@ class Utility_manager:
                 "total_cost": total_cost,
             },
         }
+
+    def format_for_first_record(self) -> dict:
+        return {
+            "date": self.date,
+            "utilities": {
+                "gas": {
+                    "current": self.gas.consumption,
+                },
+                "water": {
+                    "cold": {
+                        "kitchen": {
+                            "current": self.water.cold_kitchen_consumption,
+                        },
+                        "bathroom": {
+                            "current": self.water.cold_bathroom_consumption,
+                        },
+                    },
+                    "hot": {
+                        "kitchen": {
+                            "current": self.water.hot_kitchen_consumption,
+                        },
+                        "bathroom": {
+                            "current": self.water.hot_bathroom_consumption,
+                        },
+                    },
+                    "electricity": {
+                        "t1": {
+                            "current": self.electricity.t1_consumption,
+                            "t2": {
+                                "current": self.electricity.t2_consumption,
+                            },
+                        },
+                    },
+                },
+                "prices": {
+                    "gas": self.price.gas,
+                    "gas_distribution": self.price.gas_distribution,
+                    "electricity": {"t1": self.price.t1, "t2": self.price.t2},
+                    "water": {"cold": self.price.cold, "hot": self.price.hot},
+                },
+                "cost": {},
+            },
+        }
