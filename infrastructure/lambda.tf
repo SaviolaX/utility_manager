@@ -15,6 +15,12 @@ resource "aws_lambda_function" "utility_manager_lambda_function" {
   source_code_hash = data.archive_file.archive_utility_manager_lambda_function.output_base64sha256
   timeout          = 60
   memory_size      = 128
+
+  environment {
+    variables = {
+      DYNAMO_DB_TABLE = aws_dynamodb_table.utility_manager_dynamodb_table.arn
+    }
+  }
 }
 
 resource "aws_iam_role" "utility_manager_lambda_role" {
@@ -34,8 +40,8 @@ resource "aws_iam_role" "utility_manager_lambda_role" {
   })
 }
 
-resource "aws_iam_policy" "lambda_basic_execution" {
-  name        = "lambda_basic_execution"
+resource "aws_iam_policy" "utility_manager_lambda_basic_execution" {
+  name        = "utility_manager_lambda_basic_execution"
   description = "Allow Lambda to execute basic actions"
 
   policy = jsonencode({
@@ -52,10 +58,10 @@ resource "aws_iam_policy" "lambda_basic_execution" {
       }
     ]
   })
-  
+
 }
 
 resource "aws_iam_role_policy_attachment" "utility_manager_lambda_role_policy" {
   role       = aws_iam_role.utility_manager_lambda_role.name
-  policy_arn = aws_iam_policy.lambda_basic_execution.arn
+  policy_arn = aws_iam_policy.utility_manager_lambda_basic_execution.arn
 }
