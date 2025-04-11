@@ -366,10 +366,14 @@ export default {
       return `${year}${month}${day}${hour}${minute}${second}${millisecond}`;
     },
     sortByDate(dataLst, order = "asc") {
-      const sorted = [...dataLst]; // Avoid mutating the original array
+      const sorted = [...dataLst];
       return order === "desc"
-        ? sorted.sort((a, b) => new Date(b.date) - new Date(a.date))
-        : sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
+        ? sorted.sort(
+            (a, b) => new Date(b.formattedDate) - new Date(a.formattedDate)
+          )
+        : sorted.sort(
+            (a, b) => new Date(a.formattedDate) - new Date(b.formattedDate)
+          );
     },
     async getCurrentSession() {
       try {
