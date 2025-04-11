@@ -260,6 +260,7 @@
 
 <script>
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
+import { dateToString, sortByDate } from "@/services/main";
 import { useAuthStore } from "@/stores/auth";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { ref } from "vue";
@@ -306,6 +307,8 @@ export default {
       authStore,
       router,
       COUNT_URL,
+      isLoading,
+      showResultBlock,
 
       // Inputs
       waterInput,
@@ -321,11 +324,12 @@ export default {
       electricityPrice,
       t1electricityPrice,
       t2electricityPrice,
-
+      // Data
       objectDetails,
-      showResultBlock,
       utilitiesList,
-      isLoading,
+      // Functions
+      dateToString,
+      sortByDate,
     };
   },
   watch: {
@@ -355,27 +359,6 @@ export default {
     }
   },
   methods: {
-    dateToString() {
-      const date = new Date();
-      let year = date.getFullYear();
-      let month = String(date.getMonth() + 1).padStart(2, "0");
-      let day = String(date.getDate()).padStart(2, "0");
-      let hour = String(date.getHours()).padStart(2, "0");
-      let minute = String(date.getMinutes()).padStart(2, "0");
-      let second = String(date.getSeconds()).padStart(2, "0");
-      let millisecond = String(date.getMilliseconds()).padStart(2, "0");
-      return `${year}${month}${day}${hour}${minute}${second}${millisecond}`;
-    },
-    sortByDate(dataLst, order = "asc") {
-      const sorted = [...dataLst];
-      return order === "desc"
-        ? sorted.sort(
-            (a, b) => new Date(b.formattedDate) - new Date(a.formattedDate)
-          )
-        : sorted.sort(
-            (a, b) => new Date(a.formattedDate) - new Date(b.formattedDate)
-          );
-    },
     async getCurrentSession() {
       try {
         const session = await fetchAuthSession();
