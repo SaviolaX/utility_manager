@@ -120,17 +120,17 @@ class Utility_manager:
                             ],
                         },
                     },
-                    "electricity": {
-                        "t1": {
-                            "current": electricity_results["t1"]["current"],
-                            "previous": electricity_results["t1"]["previous"],
-                            "consumption": electricity_results["t1"]["consumption"],
-                        },
-                        "t2": {
-                            "current": electricity_results["t2"]["current"],
-                            "previous": electricity_results["t2"]["previous"],
-                            "consumption": electricity_results["t2"]["consumption"],
-                        },
+                },
+                "electricity": {
+                    "t1": {
+                        "current": electricity_results["t1"]["current"],
+                        "previous": electricity_results["t1"]["previous"],
+                        "consumption": electricity_results["t1"]["consumption"],
+                    },
+                    "t2": {
+                        "current": electricity_results["t2"]["current"],
+                        "previous": electricity_results["t2"]["previous"],
+                        "consumption": electricity_results["t2"]["consumption"],
                     },
                 },
             },
