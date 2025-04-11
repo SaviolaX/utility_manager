@@ -280,39 +280,65 @@ class Utility_manager:
             "utilities": {
                 "gas": {
                     "current": self.gas.consumption,
+                    "previous": "?",
+                    "consumption": "?",
                 },
                 "water": {
                     "cold": {
                         "kitchen": {
                             "current": self.water.cold_kitchen_consumption,
+                            "previous": "?",
+                            "consumption": "?",
                         },
                         "bathroom": {
                             "current": self.water.cold_bathroom_consumption,
+                            "previous": "?",
+                            "consumption": "?",
                         },
                     },
                     "hot": {
                         "kitchen": {
                             "current": self.water.hot_kitchen_consumption,
+                            "previous": "?",
+                            "consumption": "?",
                         },
                         "bathroom": {
                             "current": self.water.hot_bathroom_consumption,
-                        },
-                    },
-                    "electricity": {
-                        "t1": {
-                            "current": self.electricity.t1_consumption,
-                            "t2": {
-                                "current": self.electricity.t2_consumption,
-                            },
+                            "previous": "?",
+                            "consumption": "?",
                         },
                     },
                 },
-                "prices": {
-                    "gas": self.price.gas,
-                    "gas_distribution": self.price.gas_distribution,
-                    "electricity": {"t1": self.price.t1, "t2": self.price.t2},
-                    "water": {"cold": self.price.cold, "hot": self.price.hot},
+                "electricity": {
+                    "t1": {
+                        "current": self.electricity.t1_consumption,
+                        "previous": "?",
+                        "consumption": "?",
+                    },
+                    "t2": {
+                        "current": self.electricity.t2_consumption,
+                        "previous": "?",
+                        "consumption": "?",
+                    },
                 },
-                "cost": {},
+            },
+            "prices": {
+                "gas": self.price.gas,
+                "gas_distribution": self.price.gas_distribution,
+                "electricity": {"t1": self.price.t1, "t2": self.price.t2},
+                "water": {"cold": self.price.cold, "hot": self.price.hot},
+            },
+            "cost": {
+                "gas": "?",
+                "water": {
+                    "kitchen_cold": "?",
+                    "kitchen_hot": "?",
+                    "bathroom_cold": "?",
+                    "bathroom_hot": "?",
+                    "cold": "?",
+                    "hot": "?",
+                },
+                "electricity": {"t1": "?", "t2": "?", "total": "?"},
+                "total_cost": "?",
             },
         }
