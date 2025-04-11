@@ -241,7 +241,7 @@
               <td></td>
               <td></td>
               <td>Total cost:</td>
-              <td>{{ objectDetails.total_cost }}</td>
+              <td>{{ objectDetails.cost.total_cost }}</td>
             </tr>
           </tbody>
         </table>
@@ -249,9 +249,9 @@
       <div></div>
     </div>
     <div class="home-container-history-block">
-      <div v-for="object in resp" :key="object" class="history-object">
-        <button @click="getObjectResult(object.id)">
-          {{ object.date }}
+      <div v-for="object in utilitiesList" :key="object" class="history-object">
+        <button @click="getObjectResult(object.date)">
+          {{ object.formattedDate }}
         </button>
       </div>
     </div>
@@ -276,7 +276,8 @@ export default {
     const router = useRouter();
     const COUNT_URL =
       "https://rtem6et0wh.execute-api.eu-central-1.amazonaws.com/dev/count";
-    const resp = ref(null);
+
+    const utilitiesList = ref(null);
 
     // Input data
     const gasInput = ref(null);
@@ -323,13 +324,13 @@ export default {
 
       objectDetails,
       showResultBlock,
-      resp,
+      utilitiesList,
       isLoading,
     };
   },
   watch: {
     // Set price values from previous month
-    resp(newValue) {
+    utilitiesList(newValue) {
       if (newValue.length !== 0) {
         const sortedData = this.sortByDate(newValue, "desc");
         const lastObjByDate = sortedData[0];
@@ -388,7 +389,6 @@ export default {
       }
     },
     setUserSession(session) {
-      // Store user in Pinia reacitve store
       this.authStore.setUser({
         user: {
           username: session.userSub,
@@ -403,10 +403,8 @@ export default {
     },
     async sendInputData() {
       // This method will handle the submission of input data
-      const date = new Date().toJSON().slice(0, 10);
-
       const payload = {
-        date: date,
+        date: this.dateToString(),
         utilities: {
           gas: this.gasInput,
           electricity: {
@@ -450,8 +448,12 @@ export default {
         }),
       });
       const data = await response.json();
-      // this.resp = data;
-      console.log("Response from server:", data);
+      console.log("POST -> Response from server:", data);
+
+      //TODO: To think... Maybe i should remove inputs
+      // after updating data instead of reload whole page....
+      // Reload page to update data and input fields
+      location.reload();
     },
     async getData() {
       const resp = await fetch(this.COUNT_URL, {
@@ -462,12 +464,12 @@ export default {
         },
       });
       const data = await resp.json();
-      console.log("Data from server:", data);
-      this.resp = this.sortByDate(data.utilities_list, "desc");
-      // this.resp = JSON.parse(data.utility_counts);
+      this.utilitiesList = this.sortByDate(data.utilities_list, "desc");
     },
-    getObjectResult(id) {
-      this.objectDetails = this.resp.find((object) => object.id === id);
+    getObjectResult(date) {
+      this.objectDetails = this.utilitiesList.find(
+        (object) => object.date === date
+      );
       console.log("Object details:", this.objectDetails);
       this.showResultBlock = true;
     },
