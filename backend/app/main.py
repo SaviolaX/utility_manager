@@ -1,15 +1,17 @@
 import json
+import os
 
 import boto3
 from core.db_handler import UtilitiesDB
 from core.models import Utility_manager
-from core.services import response_handler
+from core.services import DataHandler, response_handler
 
 STATUS_CODE_OK = 200
 ACA_ORIGIN = "*"
 
 
-db_arn = "arn:aws:dynamodb:eu-central-1:153061395159:table/utility_manager_db"
+# db_arn = "arn:aws:dynamodb:eu-central-1:153061395159:table/utility_manager_db"
+db_arn = os.environ["DYNAMO_DB_TABLE"]
 
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(db_arn)
@@ -27,23 +29,19 @@ def lambda_handler(event: dict, context: dict) -> dict:
     )
 
     # TODO:
-    # Convert date from single line in frontend
-    # Fix watch method after first item loaded
-    # Update items after post request
     # Add try/except
     # To think about initiation db inside lambda or outside
 
     if event.get("httpMethod") == "GET":
-        with open("database.json", "r") as f:
-            data = json.load(f)
 
         resp = db.get_all(user_id=username)
-        print(resp)
+
+        formatted_data = DataHandler.format_data(resp["Items"])
 
         return response_handler(
             status_code=STATUS_CODE_OK,
             body={
-                "utilities_list": resp["Items"],
+                "utilities_list": formatted_data,
             },
             origin=ACA_ORIGIN,
         )
@@ -53,19 +51,26 @@ def lambda_handler(event: dict, context: dict) -> dict:
         all_data = db.get_all(user_id=username)
 
         if all_data["Count"] != 0:
-            # new_data = json.loads(event["body"])["body"]["payload"]
-            # old_data = data[-1]
+            # Get all needed data
+            new_data = json.loads(event["body"])["body"]["payload"]
+            old_data = all_data["Items"]
 
-            # um = Utility_manager.from_json(new_data)
-            # result = um.calculate_costs(old_data)
+            # Format data
+            formatted_old_data = DataHandler.format_data(old_data)
+            ordered_list = DataHandler.order_by_date(formatted_old_data, "asc")
 
-            # resp = db.add(
-            #     p_key=username,
-            #     s_key=result["date"],
-            #     utilities=result["utilities"],
-            #     prices=result["prices"],
-            #     cost=result["cost"],
-            # )
+            # Calculations
+            um = Utility_manager.from_json(new_data)
+            result = um.calculate_costs(ordered_list[-1])
+
+            # Saving calculations to db
+            resp = db.add(
+                p_key=username,
+                s_key=result["date"],
+                utilities=result["utilities"],
+                prices=result["prices"],
+                cost=result["cost"],
+            )
 
             return response_handler(
                 status_code=STATUS_CODE_OK,
@@ -75,9 +80,14 @@ def lambda_handler(event: dict, context: dict) -> dict:
                 origin=ACA_ORIGIN,
             )
         else:
+            # Get new (first) data
             new_data = json.loads(event["body"])["body"]["payload"]
+
+            # Format data
             um = Utility_manager.from_json(new_data)
             formatted_data = um.format_for_first_record()
+
+            # Saving data to db
             resp = db.add(
                 p_key=username,
                 s_key=formatted_data["date"],
@@ -85,6 +95,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
                 prices=formatted_data["prices"],
                 cost=formatted_data["cost"],
             )
+
             return response_handler(
                 status_code=STATUS_CODE_OK,
                 body={
@@ -101,26 +112,47 @@ def lambda_handler(event: dict, context: dict) -> dict:
 #         "requestContext": {
 #             "authorizer": {
 #                 "claims": {
-#                     "cognito:username": "test_user",
+#                     "cognito:username": "83844892-d021-709c-d9b3-2f30d2f3f24a",
 #                     "email": "test@mail.com",
 #                 }
 #             }
 #         },
-#         "body": '{"body":{"payload":{"utilities":{"gas":123,"electricity":{"t1":222,"t2":222},"water":{"cold":{"kitchen":123,"bathroom":123},"hot":{"kitchen":123,"bathroom":123}}},"prices":{"gas":0.5,"gas_distribution":0.1,"electricity":{"t1":0.4,"t2":0.3},"water":{"cold":0.2,"hot":0.3}}}}}',
+#         "body": json.dumps(
+#             {
+#                 "body": {
+#                     "payload": {
+#                         "date": "20250413253220485",
+#                         "utilities": {
+#                             "gas": 40,
+#                             "electricity": {"t1": 25, "t2": 35},
+#                             "water": {
+#                                 "cold": {"kitchen": 50, "bathroom": 50},
+#                                 "hot": {"kitchen": 50, "bathroom": 40},
+#                             },
+#                         },
+#                         "prices": {
+#                             "gas": 15,
+#                             "gas_distribution": 10,
+#                             "electricity": {"t1": 15, "t2": 25},
+#                             "water": {"cold": 15, "hot": 25},
+#                         },
+#                     }
+#                 }
+#             }
+#         ),
 #     }
 
-#     get_event = {
-#         "httpMethod": "GET",
-#         "requestContext": {
-#             "authorizer": {
-#                 "claims": {
-#                     "cognito:username": "test_user",
-#                     "email": "test@mail.com",
-#                 }
+# get_event = {
+#     "httpMethod": "GET",
+#     "requestContext": {
+#         "authorizer": {
+#             "claims": {
+#                 "cognito:username": "83844892-d021-709c-d9b3-2f30d2f3f24a",
+#                 "email": "test@mail.com",
 #             }
-#         },
-#         # "body": json.dumps(),
-#     }
-#     context = {}
-#     # response = lambda_handler(get_event, context)
-#     response = lambda_handler(post_event, context)
+#         }
+#     },
+# "body": json.dumps(),
+# }
+# response = lambda_handler(get_event, context={})
+# response = lambda_handler(post_event, context={})
