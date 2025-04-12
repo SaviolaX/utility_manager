@@ -75,7 +75,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
             return response_handler(
                 status_code=STATUS_CODE_OK,
                 body={
-                    "response": all_data["Count"],
+                    "message": "New record created.",
                 },
                 origin=ACA_ORIGIN,
             )
