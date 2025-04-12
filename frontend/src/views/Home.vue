@@ -367,20 +367,14 @@ export default {
   },
   methods: {
     cleanInputs() {
-      const gasInp = document.getElementById("gas");
-      const t1 = document.getElementById("t1");
-      const t2 = document.getElementById("t2");
-      const coldKitchen = document.getElementById("coldKitchen");
-      const coldBathroom = document.getElementById("coldBathroom");
-      const hotKitchen = document.getElementById("hotKitchen");
-      const hotBathroom = document.getElementById("hotBathroom");
-      gasInp.value = "";
-      t1.value = "";
-      t2.value = "";
-      coldKitchen.value = "";
-      coldBathroom.value = "";
-      hotKitchen.value = "";
-      hotBathroom.value = "";
+      this.gasInput = null;
+      this.waterInput = {
+        kitchen: { cold: null, hot: null },
+        bathroom: { cold: null, hot: null },
+      };
+      this.t1electricityInput = null;
+      this.t2electricityInput = null;
+      this.electricityInput = null;
     },
     async getCurrentSession() {
       try {
@@ -455,6 +449,9 @@ export default {
       });
       const data = await response.json();
       console.log("POST -> Response from server:", data);
+
+      this.showResultBlock = false;
+      await this.getData();
 
       // remove input values
       this.cleanInputs();
