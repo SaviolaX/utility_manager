@@ -437,35 +437,43 @@ export default {
       };
 
       console.log("Submitted data:", payload);
-      const response = await fetch(this.COUNT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.authStore.authToken}`,
-        },
-        body: JSON.stringify({
-          body: { payload },
-        }),
-      });
-      const data = await response.json();
-      console.log("POST -> Response from server:", data);
+      try {
+        const response = await fetch(this.COUNT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${this.authStore.authToken}`,
+          },
+          body: JSON.stringify({
+            body: { payload },
+          }),
+        });
+        const data = await response.json();
+        console.log("POST -> Response from server:", data);
 
-      this.showResultBlock = false;
-      await this.getData();
+        this.showResultBlock = false;
+        await this.getData();
 
-      // remove input values
-      this.cleanInputs();
+        // remove input values
+        this.cleanInputs();
+      } catch (error) {
+        console.log("POST request error: ", error);
+      }
     },
     async getData() {
-      const resp = await fetch(this.COUNT_URL, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.authStore.authToken}`,
-        },
-      });
-      const data = await resp.json();
-      this.utilitiesList = this.sortByDate(data.utilities_list, "desc");
+      try {
+        const resp = await fetch(this.COUNT_URL, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${this.authStore.authToken}`,
+          },
+        });
+        const data = await resp.json();
+        this.utilitiesList = this.sortByDate(data.utilities_list, "desc");
+      } catch (error) {
+        console.log("GET request error: ", error);
+      }
     },
     getObjectResult(date) {
       this.objectDetails = this.utilitiesList.find(
