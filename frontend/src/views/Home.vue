@@ -135,7 +135,7 @@
           </tr>
         </tbody>
       </table>
-      <button @click="sendInputData">Submit</button>
+      <button @click="sendData">Submit</button>
     </div>
     <div v-if="showResultBlock" class="home-container-result-block">
       <div class="show-result-button-block">
@@ -270,7 +270,7 @@ import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import { dateToString, sortByDate } from "@/services/main";
 import { useAuthStore } from "@/stores/auth";
 import { fetchAuthSession } from "aws-amplify/auth";
-import { ref } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 
 export default {
@@ -287,7 +287,7 @@ export default {
 
     const utilitiesList = ref(null);
 
-    // Input data
+    // Input
     const gasInput = ref(null);
     const waterInput = ref({
       kitchen: { cold: null, hot: null },
@@ -310,13 +310,152 @@ export default {
     const showResultBlock = ref(false);
     const isLoading = ref(true);
 
-    return {
-      authStore,
-      router,
-      COUNT_URL,
-      isLoading,
-      showResultBlock,
+    onMounted(async () => {
+      try {
+        await getCurrentSession();
+        await getData();
+      } catch (err) {
+        console.log("Error in mounted:", err);
+      } finally {
+        isLoading.value = false;
+      }
+    });
 
+    const getCurrentSession = async () => {
+      try {
+        const session = await fetchAuthSession();
+
+        if (session) {
+          await setUserSession(session);
+        }
+      } catch (err) {
+        redirectToSignIn();
+        console.log("No user on mounted in Home.");
+      }
+    };
+    const setUserSession = async (session) => {
+      authStore.setUser({
+        user: {
+          username: session.userSub,
+          email: session.tokens.signInDetails?.loginId,
+        },
+        isLoggedIn: true,
+        authToken: session.tokens.idToken.toString(),
+      });
+    };
+    const redirectToSignIn = () => {
+      router.push("/signin");
+    };
+    const getData = async () => {
+      try {
+        const resp = await fetch(COUNT_URL, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authStore.authToken}`,
+          },
+        });
+        const data = await resp.json();
+        utilitiesList.value = sortByDate(data.utilities_list, "desc");
+      } catch (error) {
+        console.log("GET request error: ", error);
+      }
+    };
+    const sendData = async () => {
+      // This method will handle the submission of input data
+      const payload = {
+        date: dateToString(),
+        utilities: {
+          gas: gasInput.value,
+          electricity: {
+            t1: t1electricityInput.value,
+            t2: t2electricityInput.value,
+          },
+          water: {
+            cold: {
+              kitchen: waterInput.value.kitchen.cold,
+              bathroom: waterInput.value.bathroom.cold,
+            },
+            hot: {
+              kitchen: waterInput.value.kitchen.hot,
+              bathroom: waterInput.value.bathroom.hot,
+            },
+          },
+        },
+        prices: {
+          gas: gasPrice.value,
+          gas_distribution: gasDistribution.value,
+          electricity: {
+            t1: t1electricityPrice.value,
+            t2: t2electricityPrice.value,
+          },
+          water: {
+            cold: waterColdPrice.value,
+            hot: waterHotPrice.value,
+          },
+        },
+      };
+      console.log("Submitted data:", payload);
+      try {
+        const response = await fetch(COUNT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authStore.authToken}`,
+          },
+          body: JSON.stringify({
+            body: { payload },
+          }),
+        });
+        const data = await response.json();
+        console.log("POST -> Response from server:", data);
+        showResultBlock.value = false;
+        await getData();
+        // remove input values
+        cleanInputs();
+      } catch (error) {
+        console.log("POST request error: ", error);
+      }
+    };
+    const cleanInputs = () => {
+      gasInput.value = null;
+      waterInput.value = {
+        kitchen: { cold: null, hot: null },
+        bathroom: { cold: null, hot: null },
+      };
+      t1electricityInput.value = null;
+      t2electricityInput.value = null;
+      electricityInput.value = null;
+    };
+
+    const getObjectResult = (date) => {
+      objectDetails.value = utilitiesList.value.find(
+        (object) => object.date === date
+      );
+      console.log("Object details:", objectDetails.value);
+      showResultBlock.value = true;
+    };
+    const closeResultBlock = () => {
+      showResultBlock.value = false;
+    };
+
+    // Observes for price changes and put ones into input fields.
+    watch(utilitiesList, (newValue) => {
+      if (newValue.length !== 0) {
+        const sortedData = sortByDate(newValue, "desc");
+        const lastObjByDate = sortedData[0];
+        gasPrice.value = lastObjByDate.prices.gas;
+        gasDistribution.value = lastObjByDate.prices.gas_distribution;
+        t1electricityPrice.value = lastObjByDate.prices.electricity.t1;
+        t2electricityPrice.value = lastObjByDate.prices.electricity.t2;
+        waterColdPrice.value = lastObjByDate.prices.water.cold;
+        waterHotPrice.value = lastObjByDate.prices.water.hot;
+      }
+    });
+
+    return {
+      // API request
+      sendData,
       // Inputs
       waterInput,
       gasInput,
@@ -334,157 +473,13 @@ export default {
       // Data
       objectDetails,
       utilitiesList,
+      getObjectResult,
       // Functions
-      dateToString,
-      sortByDate,
+      closeResultBlock,
+      // Other
+      isLoading,
+      showResultBlock,
     };
-  },
-  watch: {
-    // Set price values from previous month
-    utilitiesList(newValue) {
-      if (newValue.length !== 0) {
-        const sortedData = this.sortByDate(newValue, "desc");
-        const lastObjByDate = sortedData[0];
-        this.gasPrice = lastObjByDate.prices.gas;
-        this.gasDistribution = lastObjByDate.prices.gas_distribution;
-        this.t1electricityPrice = lastObjByDate.prices.electricity.t1;
-        this.t2electricityPrice = lastObjByDate.prices.electricity.t2;
-        this.waterColdPrice = lastObjByDate.prices.water.cold;
-        this.waterHotPrice = lastObjByDate.prices.water.hot;
-      }
-    },
-  },
-  async mounted() {
-    try {
-      await this.getCurrentSession();
-      await this.getData();
-    } catch (err) {
-      console.log("Error in mounted:", err);
-      this.isLoading = false;
-    } finally {
-      this.isLoading = false;
-    }
-  },
-  methods: {
-    cleanInputs() {
-      this.gasInput = null;
-      this.waterInput = {
-        kitchen: { cold: null, hot: null },
-        bathroom: { cold: null, hot: null },
-      };
-      this.t1electricityInput = null;
-      this.t2electricityInput = null;
-      this.electricityInput = null;
-    },
-    async getCurrentSession() {
-      try {
-        const session = await fetchAuthSession();
-
-        if (session) {
-          this.setUserSession(session);
-        }
-      } catch (err) {
-        this.redirectToSignIn();
-        console.log("No user on mounted in Home.");
-      }
-    },
-    setUserSession(session) {
-      this.authStore.setUser({
-        user: {
-          username: session.userSub,
-          email: session.tokens.signInDetails?.loginId,
-        },
-        isLoggedIn: true,
-        authToken: session.tokens.idToken.toString(),
-      });
-    },
-    redirectToSignIn() {
-      this.router.push("/signin");
-    },
-    async sendInputData() {
-      // This method will handle the submission of input data
-      const payload = {
-        date: this.dateToString(),
-        utilities: {
-          gas: this.gasInput,
-          electricity: {
-            t1: this.t1electricityInput,
-            t2: this.t2electricityInput,
-          },
-          water: {
-            cold: {
-              kitchen: this.waterInput.kitchen.cold,
-              bathroom: this.waterInput.bathroom.cold,
-            },
-            hot: {
-              kitchen: this.waterInput.kitchen.hot,
-              bathroom: this.waterInput.bathroom.hot,
-            },
-          },
-        },
-        prices: {
-          gas: this.gasPrice,
-          gas_distribution: this.gasDistribution,
-          electricity: {
-            t1: this.t1electricityPrice,
-            t2: this.t2electricityPrice,
-          },
-          water: {
-            cold: this.waterColdPrice,
-            hot: this.waterHotPrice,
-          },
-        },
-      };
-
-      console.log("Submitted data:", payload);
-      try {
-        const response = await fetch(this.COUNT_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${this.authStore.authToken}`,
-          },
-          body: JSON.stringify({
-            body: { payload },
-          }),
-        });
-        const data = await response.json();
-        console.log("POST -> Response from server:", data);
-
-        this.showResultBlock = false;
-        await this.getData();
-
-        // remove input values
-        this.cleanInputs();
-      } catch (error) {
-        console.log("POST request error: ", error);
-      }
-    },
-    async getData() {
-      try {
-        const resp = await fetch(this.COUNT_URL, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${this.authStore.authToken}`,
-          },
-        });
-        const data = await resp.json();
-        this.utilitiesList = this.sortByDate(data.utilities_list, "desc");
-      } catch (error) {
-        console.log("GET request error: ", error);
-      }
-    },
-    getObjectResult(date) {
-      this.objectDetails = this.utilitiesList.find(
-        (object) => object.date === date
-      );
-      console.log("Object details:", this.objectDetails);
-      this.showResultBlock = true;
-    },
-    closeResultBlock() {
-      this.showResultBlock = false;
-    },
   },
 };
 </script>
