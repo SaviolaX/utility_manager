@@ -14,6 +14,7 @@
           <tr>
             <td>
               <input
+                id="gas"
                 type="number"
                 placeholder="Gas numbers"
                 v-model="gasInput"
@@ -40,6 +41,7 @@
           <tr>
             <td>
               <input
+                id="t1"
                 type="number"
                 placeholder="T1"
                 v-model="t1electricityInput"
@@ -56,6 +58,7 @@
           <tr>
             <td>
               <input
+                id="t2"
                 type="number"
                 placeholder="T2"
                 v-model="t2electricityInput"
@@ -83,6 +86,7 @@
           <tr>
             <td>
               <input
+                id="coldKitchen"
                 type="number"
                 placeholder="Cold. Kitchen"
                 v-model="waterInput.kitchen.cold"
@@ -90,6 +94,7 @@
             </td>
             <td>
               <input
+                id="coldBathroom"
                 type="number"
                 placeholder="Cold. Bathroom"
                 v-model="waterInput.bathroom.cold"
@@ -106,6 +111,7 @@
           <tr>
             <td>
               <input
+                id="hotKitchen"
                 type="number"
                 placeholder="Hot. Kitchen"
                 v-model="waterInput.kitchen.hot"
@@ -113,6 +119,7 @@
             </td>
             <td>
               <input
+                id="hotBathroom"
                 type="number"
                 placeholder="Hot. Bathroom"
                 v-model="waterInput.bathroom.hot"
@@ -359,6 +366,22 @@ export default {
     }
   },
   methods: {
+    cleanInputs() {
+      const gasInp = document.getElementById("gas");
+      const t1 = document.getElementById("t1");
+      const t2 = document.getElementById("t2");
+      const coldKitchen = document.getElementById("coldKitchen");
+      const coldBathroom = document.getElementById("coldBathroom");
+      const hotKitchen = document.getElementById("hotKitchen");
+      const hotBathroom = document.getElementById("hotBathroom");
+      gasInp.value = "";
+      t1.value = "";
+      t2.value = "";
+      coldKitchen.value = "";
+      coldBathroom.value = "";
+      hotKitchen.value = "";
+      hotBathroom.value = "";
+    },
     async getCurrentSession() {
       try {
         const session = await fetchAuthSession();
@@ -433,10 +456,8 @@ export default {
       const data = await response.json();
       console.log("POST -> Response from server:", data);
 
-      //TODO: To think... Maybe i should remove inputs
-      // after updating data instead of reload whole page....
-      // Reload page to update data and input fields
-      location.reload();
+      // remove input values
+      this.cleanInputs();
     },
     async getData() {
       const resp = await fetch(this.COUNT_URL, {
