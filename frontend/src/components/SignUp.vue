@@ -19,54 +19,61 @@
   
   <script>
 import { signUp } from "aws-amplify/auth";
-import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
 import { getCurrentUser } from "aws-amplify/auth";
+import { ref, onMounted } from "vue";
 
 export default {
   setup() {
-    const authStore = useAuthStore();
     const router = useRouter();
-    return { authStore, router };
-  },
-  data() {
-    return {
-      email: "",
-      password: "",
-      confirm_password: "",
-      error: null,
-    };
-  },
-  async mounted() {
-    try {
-      const user = await getCurrentUser();
-      if (user) {
-        console.log("User is authenticated. Redirect to Home page.");
-        this.router.push("/");
+
+    const email = ref("");
+    const password = ref("");
+    const confirm_password = ref("");
+    const error = ref(null);
+
+    onMounted(async () => {
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          console.log("User is authenticated. Redirect to Home page.");
+          router.push("/");
+        }
+      } catch (err) {
+        if (err.name === "UserUnAuthenticatedException") {
+          console.log("From SignUp: User is not authenticated.");
+        } else {
+          console.error("Unexpected error: ", err);
+        }
       }
-    } catch (err) {
-      console.log("No user on mounted in SignUp.");
-    }
-  },
-  methods: {
-    async signUpUser() {
+    });
+
+    const signUpUser = async () => {
       const signUpPayload = {
-        username: this.email, // method signUp accepts email as username. Configured in cognito.
-        password: this.password,
+        username: email.value, // method signUp accepts email as username. Configured in cognito.
+        password: password.value,
       };
       try {
         const user = await signUp(signUpPayload);
-        this.error = null;
+        error.value = null;
         // After sign-up, user needs to confirm (e.g., via email code)
-        this.router.push({
+        router.push({
           path: "/confirm-signup",
           query: { userId: user.userId },
         }); // Redirect to confirmation page with userId
       } catch (err) {
-        this.error = err.message;
+        error.value = err.message;
         console.error("Sign-up error:", err);
       }
-    },
+    };
+
+    return {
+      signUpUser,
+      email,
+      password,
+      confirm_password,
+      error,
+    };
   },
 };
 </script>
