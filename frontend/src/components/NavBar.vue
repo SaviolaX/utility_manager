@@ -20,6 +20,7 @@
 import { signOut, getCurrentUser } from "aws-amplify/auth";
 import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
+import { ref, onMounted } from "vue";
 
 export default {
   setup() {
@@ -36,21 +37,23 @@ export default {
       }
     };
 
+    onMounted(async () => {
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          console.log("User is authenticated. Redirect to Home page.");
+          router.push("/");
+        }
+      } catch (err) {
+        if (err.name === "UserUnAuthenticatedException") {
+          console.log("From NavBar: User is not authenticated.");
+        } else {
+          console.error("Unexpected error: ", err);
+        }
+      }
+    });
+
     return { authStore, signOutUser };
-  },
-  async mounted() {
-    const user = await getCurrentUser();
-    if (user) {
-      this.authStore.setUser({
-        user: {
-          email: user.signInDetails.loginId,
-          username: user.username,
-        },
-        isLoggedIn: true,
-      });
-    } else {
-      console.log("No user logged in.");
-    }
   },
 };
 </script>
