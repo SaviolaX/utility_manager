@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 
 class DataHandler:
@@ -14,6 +15,7 @@ class DataHandler:
 
     @classmethod
     def format_data(cls, data: dict[str]) -> list[dict]:
+        print("format data runs here.")
         new_data = []
         for item in data:
             new_data.append(
@@ -36,12 +38,31 @@ class DataHandler:
             return sorted(data, key=lambda d: d["formattedDate"], reverse=True)
 
 
-def response_handler(status_code: int, body: dict, origin: str) -> dict:
-    return {
+def response_handler(
+    status_code: int,
+    body: str,
+    content_type: str = "application/json",
+    ac_allow_origin: str = "*",
+    ac_allow_headers: str = "*",
+) -> dict[str, Any]:
+    response = {
         "statusCode": status_code,
         "headers": {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": origin,
+            "Content-Type": content_type,
+            "Access-Control-Allow-Origin": ac_allow_origin,
+            "Access-Control-Allow-Headers": ac_allow_headers,
         },
-        "body": json.dumps(body),
+        "body": body,
     }
+    print(response)
+    return response
+
+
+class CustomErrorException(Exception):
+    def __init__(self, error: str, message: str):
+        self.error = error
+        self.message = message
+        super().__init__(f"{error}: {message}")
+
+    def to_dict(self):
+        return {"error": self.error, "message": self.message}
