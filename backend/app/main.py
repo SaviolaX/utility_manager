@@ -4,9 +4,11 @@ import os
 import boto3
 from core.db_handler import UtilitiesDB
 from core.models import Utility_manager
-from core.services import DataHandler, response_handler
+from core.services import CustomErrorException, DataHandler, response_handler
 
 STATUS_CODE_OK = 200
+STATUS_CODE_INTERNAL_SERVER_ERROR = 500
+STATUS_CODE_BAD_REQUEST = 400
 ACA_ORIGIN = "*"
 
 
@@ -33,22 +35,34 @@ def lambda_handler(event: dict, context: dict) -> dict:
     # To think about initiation db inside lambda or outside
 
     if event.get("httpMethod") == "GET":
+        try:
+            resp = db.get_all(user_id=username)
 
-        resp = db.get_all(user_id=username)
+            formatted_data = DataHandler.format_data(resp["Items"])
 
-        formatted_data = DataHandler.format_data(resp["Items"])
-
-        return response_handler(
-            status_code=STATUS_CODE_OK,
-            body={
-                "utilities_list": formatted_data,
-            },
-            origin=ACA_ORIGIN,
-        )
+            return response_handler(
+                status_code=STATUS_CODE_OK,
+                body=json.dumps(
+                    {
+                        "utilities_list": formatted_data,
+                    }
+                ),
+            )
+        except CustomErrorException as ex:
+            return response_handler(
+                status_code=STATUS_CODE_BAD_REQUEST,
+                body=json.dumps(ex.to_dict()),
+            )
 
     if event.get("httpMethod") == "POST":
+        try:
+            all_data = db.get_all(user_id=username)
 
-        all_data = db.get_all(user_id=username)
+        except CustomErrorException as ex:
+            return response_handler(
+                status_code=STATUS_CODE_BAD_REQUEST,
+                body=json.dumps(ex.to_dict()),
+            )
 
         if all_data["Count"] != 0:
             # Get all needed data
@@ -62,22 +76,28 @@ def lambda_handler(event: dict, context: dict) -> dict:
             # Calculations
             um = Utility_manager.from_json(new_data)
             result = um.calculate_costs(ordered_list[-1])
-
-            # Saving calculations to db
-            resp = db.add(
-                p_key=username,
-                s_key=result["date"],
-                utilities=result["utilities"],
-                prices=result["prices"],
-                cost=result["cost"],
-            )
+            try:
+                # Saving calculations to db
+                resp = db.add(
+                    p_key=username,
+                    s_key=result["date"],
+                    utilities=result["utilities"],
+                    prices=result["prices"],
+                    cost=result["cost"],
+                )
+            except CustomErrorException as ex:
+                return response_handler(
+                    status_code=STATUS_CODE_BAD_REQUEST,
+                    body=json.dumps(ex.to_dict()),
+                )
 
             return response_handler(
                 status_code=STATUS_CODE_OK,
-                body={
-                    "message": "New record created.",
-                },
-                origin=ACA_ORIGIN,
+                body=json.dumps(
+                    {
+                        "message": "New record created.",
+                    }
+                ),
             )
         else:
             # Get new (first) data
@@ -86,21 +106,28 @@ def lambda_handler(event: dict, context: dict) -> dict:
             # Format data
             um = Utility_manager.from_json(new_data)
             formatted_data = um.format_for_first_record()
-
-            # Saving data to db
-            resp = db.add(
-                p_key=username,
-                s_key=formatted_data["date"],
-                utilities=formatted_data["utilities"],
-                prices=formatted_data["prices"],
-                cost=formatted_data["cost"],
-            )
+            try:
+                # Saving data to db
+                resp = db.add(
+                    p_key=username,
+                    s_key=formatted_data["date"],
+                    utilities=formatted_data["utilities"],
+                    prices=formatted_data["prices"],
+                    cost=formatted_data["cost"],
+                )
+            except CustomErrorException as ex:
+                return response_handler(
+                    status_code=STATUS_CODE_BAD_REQUEST,
+                    body=json.dumps(ex.to_dict()),
+                )
 
             return response_handler(
                 status_code=STATUS_CODE_OK,
-                body={
-                    "message": "First record added.",
-                },
+                body=json.dumps(
+                    {
+                        "message": "First record added.",
+                    }
+                ),
                 origin=ACA_ORIGIN,
             )
 
