@@ -13,14 +13,16 @@ import { confirmSignUp } from "aws-amplify/auth";
 import { getCurrentUser } from "aws-amplify/auth";
 import { useRouter } from "vue-router";
 import { useRoute } from "vue-router";
-import { useAuthStore } from "@/stores/auth";
-import { onMounted } from "vue";
+import { ref, onMounted } from "vue";
 
 export default {
   setup() {
-    const authStore = useAuthStore();
     const router = useRouter();
     const route = useRoute();
+
+    const username = ref("");
+    const code = ref("");
+    const error = ref(null);
 
     onMounted(async () => {
       const userId = route.query.userId;
@@ -41,31 +43,23 @@ export default {
         console.error("No user on mounted in ConfirmPage.");
       }
     });
-    return { authStore, router, route };
-  },
-  data() {
-    return {
-      username: "",
-      code: "",
-      error: null,
-    };
-  },
 
-  methods: {
-    async confirmSignUpUser() {
+    const confirmSignUpUser = async () => {
       try {
-        this.username = this.$route.query.userId;
+        username.value = route.query.userId;
         const confirmSignUpPayload = {
-          username: this.username,
-          confirmationCode: this.code,
+          username: username.value,
+          confirmationCode: code.value,
         };
         const createdUser = await confirmSignUp(confirmSignUpPayload);
         console.log("Created user from confirm page: ", createdUser);
-        this.router.push("/signin"); // Redirect to login after confirmation
+        router.push("/signin"); // Redirect to login after confirmation
       } catch (err) {
-        this.error = err.message;
+        error.value = err.message;
       }
-    },
+    };
+
+    return { code, error, confirmSignUpUser };
   },
 };
 </script>
