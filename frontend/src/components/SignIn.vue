@@ -14,59 +14,55 @@
   
 <script>
 import { signIn, getCurrentUser } from "aws-amplify/auth";
-import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
+import { ref, onMounted } from "vue";
 
 export default {
   setup() {
-    const authStore = useAuthStore();
     const router = useRouter();
 
-    return { authStore, router };
-  },
-  data() {
-    return {
-      email: "",
-      password: "",
-      error: null,
-    };
-  },
-  async mounted() {
-    try {
-      const user = await getCurrentUser();
-      if (user) {
-        console.log("User is authenticated. Redirect to Home page.");
-        this.router.push("/");
+    const email = ref("");
+    const password = ref("");
+    const error = ref(null);
+
+    onMounted(async () => {
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          console.log("User is authenticated. Redirect to Home page.");
+          router.push("/");
+        }
+      } catch (err) {
+        if (err.name === "UserUnAuthenticatedException") {
+          console.log("From SignIn: User is not authenticated.");
+        } else {
+          console.error("Unexpected error: ", err);
+        }
       }
-    } catch (err) {
-      console.log("No user on mounted in SignIn");
-    }
-  },
-  methods: {
-    async signInUser() {
+    });
+
+    const signInUser = async () => {
       const loginPayload = {
-        username: this.email, // method signIn accepts email as username. Configured in cognito.
-        password: this.password,
+        username: email.value, // method signIn accepts email as username. Configured in cognito.
+        password: password.value,
       };
       try {
         await signIn(loginPayload);
-        this.error = null;
+        error.value = null;
 
-        const user = await getCurrentUser();
-        // Set user data in the store
-        this.authStore.setUser({
-          user: {
-            email: user.signInDetails.loginId,
-            username: user.username,
-          },
-          isLoggedIn: true,
-        });
-        this.router.push("/"); // Redirect to home or dashboard
+        console.log("Logged in successfully.");
+        router.push("/"); // Redirect to home or dashboard
       } catch (err) {
-        this.error = err.message;
-        console.error("Sign-in error:", err);
+        error.value = err.message;
+        if (err.name === "UserNotFoundException") {
+          console.error("Sign-in error:", err.message);
+        } else {
+          console.log("Unexpected error: ", err);
+        }
       }
-    },
+    };
+
+    return { email, password, error, signInUser };
   },
 };
 </script>
