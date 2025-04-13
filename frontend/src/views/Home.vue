@@ -1,6 +1,7 @@
 <template>
   <LoadingSpinner v-if="isLoading" />
   <div v-else class="home-container">
+    <p v-if="error">{{ error }}</p>
     <div class="home-container-input-block">
       <table>
         <thead>
@@ -285,6 +286,8 @@ export default {
     const COUNT_URL =
       "https://rtem6et0wh.execute-api.eu-central-1.amazonaws.com/dev/count";
 
+    const error = ref(null);
+
     const utilitiesList = ref(null);
 
     // Input
@@ -356,7 +359,13 @@ export default {
           },
         });
         const data = await resp.json();
-        utilitiesList.value = sortByDate(data.utilities_list, "desc");
+        if (resp.status !== 200) {
+          console.log("Server side error: ", data.error);
+          utilitiesList.value = [];
+          error.value = "Bad request error.";
+        } else {
+          utilitiesList.value = sortByDate(data.utilities_list, "desc");
+        }
       } catch (error) {
         console.log("GET request error: ", error);
       }
@@ -407,11 +416,16 @@ export default {
           }),
         });
         const data = await response.json();
-        console.log("POST -> Response from server:", data);
-        showResultBlock.value = false;
-        await getData();
-        // remove input values
-        cleanInputs();
+        if (response.status !== 200) {
+          console.log("Server side error: ", data.error);
+          error.value = "Bad request error.";
+        } else {
+          console.log("POST -> Response from server:", data);
+          showResultBlock.value = false;
+          await getData();
+          // remove input values
+          cleanInputs();
+        }
       } catch (error) {
         console.log("POST request error: ", error);
       }
@@ -478,6 +492,7 @@ export default {
       // Other
       isLoading,
       showResultBlock,
+      error,
     };
   },
 };
