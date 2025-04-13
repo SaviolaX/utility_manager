@@ -362,7 +362,6 @@ export default {
       }
     };
     const sendData = async () => {
-      // This method will handle the submission of input data
       const payload = {
         date: dateToString(),
         utilities: {
