@@ -15,7 +15,6 @@ class DataHandler:
 
     @classmethod
     def format_data(cls, data: dict[str]) -> list[dict]:
-        print("format data runs here.")
         new_data = []
         for item in data:
             new_data.append(
@@ -54,7 +53,6 @@ def response_handler(
         },
         "body": body,
     }
-    print(response)
     return response
 
 
