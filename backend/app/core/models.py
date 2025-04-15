@@ -28,6 +28,10 @@ class Price:
     t2: float
     cold: float
     hot: float
+    housing: float
+    garbage: float
+    heat_service: float
+    heat_price: float
 
 
 @dataclass
@@ -65,6 +69,10 @@ class Utility_manager:
                 t2=data["prices"]["electricity"]["t2"],
                 cold=data["prices"]["water"]["cold"],
                 hot=data["prices"]["water"]["hot"],
+                housing=data["prices"]["housing"],
+                garbage=data["prices"]["garbage"],
+                heat_service=data["prices"]["heat_service"],
+                heat_price=data["prices"]["heat_price"],
             ),
         )
 
@@ -74,10 +82,17 @@ class Utility_manager:
         electricity_results = self._calculate_electricity(
             previous_inputs["utilities"]["electricity"]
         )
-        total_cost = (
-            gas_results["total_cost"]
-            + water_results["cost"]["total_cost"]
-            + electricity_results["cost"]["total_cost"]
+        heat_results = self._calculate_heat(previous_inputs["utilities"]["heat"])
+        total_cost = sum(
+            [
+                gas_results["cost"],
+                water_results["cost"]["total_cost"],
+                electricity_results["cost"]["total_cost"],
+                heat_results["cost"],
+                self.price.housing,
+                self.price.garbage,
+                self.price.gas_distribution,
+            ]
         )
         return {
             "date": self.date,
@@ -133,15 +148,25 @@ class Utility_manager:
                         "consumption": electricity_results["t2"]["consumption"],
                     },
                 },
+                "heat": {
+                    "current": heat_results["current"],
+                    "previous": heat_results["previous"],
+                    "consumption": heat_results["consumption"],
+                },
             },
             "prices": {
                 "gas": self.price.gas,
                 "gas_distribution": self.price.gas_distribution,
                 "electricity": {"t1": self.price.t1, "t2": self.price.t2},
                 "water": {"cold": self.price.cold, "hot": self.price.hot},
+                "heat": self.price.heat_price,
+                "heat_service": self.price.heat_service,
+                "housing": self.price.housing,
+                "garbage": self.price.garbage,
             },
             "cost": {
                 "gas": gas_results["cost"],
+                "gas_distribution": self.price.gas_distribution,
                 "water": {
                     "kitchen_cold": water_results["cost"]["kitchen_cold"],
                     "kitchen_hot": water_results["cost"]["kitchen_hot"],
@@ -154,8 +179,27 @@ class Utility_manager:
                     "t1": electricity_results["cost"]["t1"],
                     "t2": electricity_results["cost"]["t2"],
                 },
-                "total_cost": total_cost,
+                "heat": heat_results["cost"],
+                "housing": self.price.housing,
+                "garbage": self.price.garbage,
+                "total_cost": round(total_cost, 2),
             },
+        }
+
+    def _calculate_heat(self, previous_heat: dict) -> dict:
+        total_hot_consumption = (
+            self.water.hot_bathroom_consumption + self.water.hot_kitchen_consumption
+        )
+
+        heat_consumption = total_hot_consumption - previous_heat["current"]
+
+        total_cost = heat_consumption * self.price.heat_price
+
+        return {
+            "current": total_hot_consumption,
+            "previous": previous_heat["current"],
+            "consumption": heat_consumption,
+            "cost": total_cost,
         }
 
     def _calculate_gas(self, previous_gas: dict) -> dict:
@@ -164,13 +208,11 @@ class Utility_manager:
         """
         gas_consumption = self.gas.consumption - previous_gas["current"]
         gas_cost = gas_consumption * self.price.gas
-        total_cost = gas_cost + self.price.gas_distribution
         return {
             "current": self.gas.consumption,
             "previous": previous_gas["current"],
             "consumption": gas_consumption,
             "cost": gas_cost,
-            "total_cost": total_cost,
         }
 
     def _calculate_electricity(self, previous_electricity: dict) -> dict:
@@ -275,6 +317,9 @@ class Utility_manager:
         }
 
     def format_for_first_record(self) -> dict:
+        current_heat_consumption = (
+            self.water.hot_bathroom_consumption + self.water.hot_kitchen_consumption
+        )
         return {
             "date": self.date,
             "utilities": {
@@ -321,12 +366,21 @@ class Utility_manager:
                         "consumption": "?",
                     },
                 },
+                "heat": {
+                    "current": current_heat_consumption,
+                    "previous": "?",
+                    "consumption": "?",
+                },
             },
             "prices": {
                 "gas": self.price.gas,
                 "gas_distribution": self.price.gas_distribution,
                 "electricity": {"t1": self.price.t1, "t2": self.price.t2},
                 "water": {"cold": self.price.cold, "hot": self.price.hot},
+                "heat": self.price.heat_price,
+                "heat_service": self.price.heat_service,
+                "housing": self.price.housing,
+                "garbage": self.price.garbage,
             },
             "cost": {
                 "gas": "?",
@@ -339,6 +393,9 @@ class Utility_manager:
                     "hot": "?",
                 },
                 "electricity": {"t1": "?", "t2": "?", "total": "?"},
+                "heat": self.price.heat_price,
+                "housing": self.price.housing,
+                "garbage": self.price.garbage,
                 "total_cost": "?",
             },
         }
