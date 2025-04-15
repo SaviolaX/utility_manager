@@ -134,34 +134,12 @@ def lambda_handler(event: dict, context: dict) -> dict:
 #         "requestContext": {
 #             "authorizer": {
 #                 "claims": {
-#                     "cognito:username": "83844892-d021-709c-d9b3-2f30d2f3f24a",
+#                     "cognito:username": "6314f8c2-f0f1-7040-999f-b6a9760702d7",
 #                     "email": "test@mail.com",
 #                 }
 #             }
 #         },
-#         "body": json.dumps(
-#             {
-#                 "body": {
-#                     "payload": {
-#                         "date": "20250413253220485",
-#                         "utilities": {
-#                             "gas": 40,
-#                             "electricity": {"t1": 25, "t2": 35},
-#                             "water": {
-#                                 "cold": {"kitchen": 50, "bathroom": 50},
-#                                 "hot": {"kitchen": 50, "bathroom": 40},
-#                             },
-#                         },
-#                         "prices": {
-#                             "gas": 15,
-#                             "gas_distribution": 10,
-#                             "electricity": {"t1": 15, "t2": 25},
-#                             "water": {"cold": 15, "hot": 25},
-#                         },
-#                     }
-#                 }
-#             }
-#         ),
+#         "body": '{"body":{"payload":{"date":"20250414202539828","utilities":{"gas":20,"electricity":{"t1":20,"t2":30},"water":{"cold":{"kitchen":20,"bathroom":20},"hot":{"kitchen":30,"bathroom":30}}},"prices":{"gas":10,"gas_distribution":5,"electricity":{"t1":10,"t2":20},"water":{"cold":10,"hot":20},"housing":10,"garbage":10,"heat_service":10,"heat_price":10}}}}',
 #     }
 
 # get_event = {
@@ -169,12 +147,11 @@ def lambda_handler(event: dict, context: dict) -> dict:
 #     "requestContext": {
 #         "authorizer": {
 #             "claims": {
-#                 "cognito:username": "83844892-d021-709c-d9b3-2f30d2f3f24a",
+#                 "cognito:username": "6314f8c2-f0f1-7040-999f-b6a9760702d7",
 #                 "email": "test@mail.com",
 #             }
 #         }
 #     },
-# "body": json.dumps(),
 # }
 # response = lambda_handler(get_event, context={})
 # response = lambda_handler(post_event, context={})
