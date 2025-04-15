@@ -30,14 +30,10 @@ def lambda_handler(event: dict, context: dict) -> dict:
         .get("cognito:username")
     )
 
-    # TODO:
-    # Add try/except
-    # To think about initiation db inside lambda or outside
-
     if event.get("httpMethod") == "GET":
         try:
             resp = db.get_all(user_id=username)
-
+            print("before formatting: ", resp["Items"])
             formatted_data = DataHandler.format_data(resp["Items"])
 
             return response_handler(
@@ -63,7 +59,6 @@ def lambda_handler(event: dict, context: dict) -> dict:
                 status_code=STATUS_CODE_BAD_REQUEST,
                 body=json.dumps(ex.to_dict()),
             )
-
         if all_data["Count"] != 0:
             # Get all needed data
             new_data = json.loads(event["body"])["body"]["payload"]
@@ -76,6 +71,7 @@ def lambda_handler(event: dict, context: dict) -> dict:
             # Calculations
             um = Utility_manager.from_json(new_data)
             result = um.calculate_costs(ordered_list[-1])
+
             try:
                 # Saving calculations to db
                 resp = db.add(
@@ -128,7 +124,6 @@ def lambda_handler(event: dict, context: dict) -> dict:
                         "message": "First record added.",
                     }
                 ),
-                origin=ACA_ORIGIN,
             )
 
 
