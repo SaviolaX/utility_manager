@@ -6,6 +6,7 @@ vars:
   GREETING: Hello, World!
 
 tasks:
+  # terraform
   init:
     cmds:
       - terraform init
@@ -29,3 +30,9 @@ tasks:
     dir: infrastructure
     cmds:
       - terraform output
+
+  # build vue js
+  build:
+    dir: frontend
+    cmds:
+      - npm run build
