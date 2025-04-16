@@ -30,7 +30,7 @@ def test_first_input_values() -> dict:
 @pytest.fixture
 def test_second_input_values() -> dict:
     return {
-        "date": "20250414202539828",
+        "date": "20250514202539828",
         "utilities": {
             "gas": 30,
             "electricity": {"t1": 30, "t2": 40},
@@ -55,7 +55,7 @@ def test_second_input_values() -> dict:
 @pytest.fixture
 def test_database_normal_record() -> dict:
     return {
-        "date": "20250414202539828",
+        "date": "20250514202539828",
         "utilities": {
             "gas": {"current": 30, "previous": 20, "consumption": 10},
             "water": {
