@@ -14,7 +14,11 @@ class DataHandler:
         return full_date
 
     @classmethod
-    def format_data(cls, data: dict[str]) -> list[dict]:
+    def format_data(cls, data: list[dict]) -> list[dict]:
+        """
+        Format the data from the DynamoDB to needed format
+        for the frontend and for calculations.
+        """
         new_data = []
         for item in data:
             new_data.append(
