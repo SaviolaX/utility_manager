@@ -22,37 +22,3 @@ npm run build
 ```
 
 It generates files needed for deployment, and store them in `dist/` folder that placed in the project directory.
-
-### Deploy to S3
-
-To check witch resources will be created on AWS
-
-- Go to `infrastructure` dir
-
-```sh
-cd infrastructure
-```
-
-- Initialize terraform
-
-```sh
-terraform init
-```
-
-- To check all resources will be changed or created
-
-```sh
-task plan
-```
-
-- To start create resources and upload project(`dist/`) on S3
-
-```sh
-task apply
-```
-
-- To delete everything was created
-
-```sh
-task destroy
-```
