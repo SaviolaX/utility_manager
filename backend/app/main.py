@@ -13,7 +13,7 @@ ACA_ORIGIN = "*"
 
 
 # db_arn = "arn:aws:dynamodb:eu-central-1:153061395159:table/utility_manager_db"
-db_arn = os.environ["DYNAMO_DB_TABLE"]
+db_arn = os.environ.get("DYNAMO_DB_TABLE") or ""
 
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(db_arn)
@@ -33,7 +33,6 @@ def lambda_handler(event: dict, context: dict) -> dict:
     if event.get("httpMethod") == "GET":
         try:
             resp = db.get_all(user_id=username)
-            print("before formatting: ", resp["Items"])
             formatted_data = DataHandler.format_data(resp["Items"])
 
             return response_handler(
