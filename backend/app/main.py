@@ -67,11 +67,14 @@ def lambda_handler(event: dict, context: dict) -> dict:
             formatted_old_data = DataHandler.format_data(old_data)
             ordered_list = DataHandler.order_by_date(formatted_old_data, "asc")
 
-            # Calculations
-            um = Utility_manager.from_json(new_data)
-            result = um.calculate_costs(ordered_list[-1])
-
             try:
+                # Check if the data is valid
+                DataHandler.validate_data(new_data)
+
+                # Calculations
+                um = Utility_manager.from_json(new_data)
+                result = um.calculate_costs(ordered_list[-1])
+
                 # Saving calculations to db
                 resp = db.add(
                     p_key=username,
@@ -98,10 +101,13 @@ def lambda_handler(event: dict, context: dict) -> dict:
             # Get new (first) data
             new_data = json.loads(event["body"])["body"]["payload"]
 
-            # Format data
-            um = Utility_manager.from_json(new_data)
-            formatted_data = um.format_for_first_record()
             try:
+                # Check if the data is valid
+                DataHandler.validate_data(new_data)
+
+                # Format data
+                um = Utility_manager.from_json(new_data)
+                formatted_data = um.format_for_first_record()
                 # Saving data to db
                 resp = db.add(
                     p_key=username,
