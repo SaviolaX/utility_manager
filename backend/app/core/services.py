@@ -40,6 +40,24 @@ class DataHandler:
         else:  # desc
             return sorted(data, key=lambda d: d["formattedDate"], reverse=True)
 
+    @classmethod
+    def validate_data(cls, data: dict) -> bool:
+        """
+        Validate the data from the frontend.
+        """
+        try:
+            for key, value in data.items():
+                if value is None:
+                    raise ValueError(f"Missing value for {key}")
+                elif type(value) is str:
+                    if not value.strip():
+                        raise ValueError(f"Missing value for {key}")
+                elif isinstance(value, dict):
+                    cls.validate_data(value)
+            return data
+        except ValueError as ex:
+            raise CustomErrorException(type(ex).__name__, str(ex)) from ex
+
 
 def response_handler(
     status_code: int,
