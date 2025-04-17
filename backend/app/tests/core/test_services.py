@@ -11,7 +11,7 @@ def test_data_from_db() -> None:
             "Utilities": '{"electricity": 100, "water": 50}',
             "Prices": '{"electricity": 0.2, "water": 0.1}',
             "Cost": '{"electricity": 20, "water": 5}',
-        }, 
+        },
         {
             "UserId": "test_user",
             "Date": "20250314202539828",
@@ -46,6 +46,7 @@ def test_format_data(test_data_from_db: list[dict]) -> None:
     assert formatted_data[1]["prices"] == {"electricity": 0.25, "water": 0.15}
     assert formatted_data[1]["cost"] == {"electricity": 37.5, "water": 9}
 
+
 def test_order_by_date(test_data_from_db: list[dict]) -> None:
     formatted_data = DataHandler.format_data(test_data_from_db)
     ordered_data_asc = DataHandler.order_by_date(formatted_data, "asc")
@@ -56,6 +57,113 @@ def test_order_by_date(test_data_from_db: list[dict]) -> None:
 
     assert ordered_data_desc[0]["date"] == "20250414202539828"
     assert ordered_data_desc[1]["date"] == "20250314202539828"
+
+
+def test_validate_data__correct() -> None:
+    data = {
+        "date": "20250414202539828",
+        "utilities": {
+            "gas": 10,
+            "electricity": {"t1": 20, "t2": 30},
+            "water": {
+                "cold": {"kitchen": 20, "bathroom": 20},
+                "hot": {"kitchen": 30, "bathroom": 30},
+            },
+        },
+        "prices": {
+            "gas": 10,
+            "gas_distribution": 5,
+            "electricity": {"t1": 10, "t2": 20},
+            "water": {"cold": 10, "hot": 20},
+            "housing": 10,
+            "garbage": 10,
+            "heat_service": 10,
+            "heat_price": 10,
+        },
+    }
+    assert DataHandler.validate_data(data) == data
+
+
+def test_validate_data__no_gas_value() -> None:
+    data = {
+        "date": "20250414202539828",
+        "utilities": {
+            "gas": None,  # This should raise an error
+            "electricity": {"t1": 20, "t2": 30},
+            "water": {
+                "cold": {"kitchen": 20, "bathroom": 20},
+                "hot": {"kitchen": 30, "bathroom": 30},
+            },
+        },
+        "prices": {
+            "gas": 10,
+            "gas_distribution": 5,
+            "electricity": {"t1": 10, "t2": 20},
+            "water": {"cold": 10, "hot": 20},
+            "housing": 10,
+            "garbage": 10,
+            "heat_service": 10,
+            "heat_price": 10,
+        },
+    }
+    with pytest.raises(CustomErrorException) as ex:
+        DataHandler.validate_data(data)
+    assert str(ex.value) == "ValueError: Missing value for gas"
+
+
+def test_validate_data__no_t1_value() -> None:
+    data = {
+        "date": "20250414202539828",
+        "utilities": {
+            "gas": 10,
+            "electricity": {"t1": None, "t2": 30}, # t1 should raise an error
+            "water": {
+                "cold": {"kitchen": 20, "bathroom": 20},
+                "hot": {"kitchen": 30, "bathroom": 30},
+            },
+        },
+        "prices": {
+            "gas": 10,
+            "gas_distribution": 5,
+            "electricity": {"t1": 10, "t2": 20},
+            "water": {"cold": 10, "hot": 20},
+            "housing": 10,
+            "garbage": 10,
+            "heat_service": 10,
+            "heat_price": 10,
+        },
+    }
+    with pytest.raises(CustomErrorException) as ex:
+        DataHandler.validate_data(data)
+    assert str(ex.value) == "ValueError: Missing value for t1"
+
+def test_validate_data__no_date_value() -> None:
+    data = {
+        "date": "",
+        "utilities": {
+            "gas": 10,
+            "electricity": {"t1": 20, "t2": 30}, # t1 should raise an error
+            "water": {
+                "cold": {"kitchen": 20, "bathroom": 20},
+                "hot": {"kitchen": 30, "bathroom": 30},
+            },
+        },
+        "prices": {
+            "gas": 10,
+            "gas_distribution": 5,
+            "electricity": {"t1": 10, "t2": 20},
+            "water": {"cold": 10, "hot": 20},
+            "housing": 10,
+            "garbage": 10,
+            "heat_service": 10,
+            "heat_price": 10,
+        },
+    }
+    with pytest.raises(CustomErrorException) as ex:
+        DataHandler.validate_data(data)
+    assert str(ex.value) == "ValueError: Missing value for date"
+
+
 
 def test_response_handler() -> None:
     response = response_handler(
@@ -71,17 +179,25 @@ def test_response_handler() -> None:
     assert response["headers"]["Access-Control-Allow-Headers"] == "*"
     assert response["body"] == '{"message": "success"}'
 
+
 def test_custom_error_exception() -> None:
     error = CustomErrorException("CustomError", "This is a custom error")
     assert error.error == "CustomError"
     assert error.message == "This is a custom error"
-    assert error.to_dict() == {"error": "CustomError", "message": "This is a custom error"}
+    assert error.to_dict() == {
+        "error": "CustomError",
+        "message": "This is a custom error",
+    }
+
 
 def test_custom_error_exception_zero_division_error() -> None:
     try:
-         2 / 0
+        2 / 0
     except Exception as ex:
         error = CustomErrorException(type(ex).__name__, str(ex))
         assert error.error == "ZeroDivisionError"
         assert error.message == "division by zero"
-        assert error.to_dict() == {"error": "ZeroDivisionError", "message": "division by zero"}
+        assert error.to_dict() == {
+            "error": "ZeroDivisionError",
+            "message": "division by zero",
+        }
