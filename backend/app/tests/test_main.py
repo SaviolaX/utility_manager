@@ -85,8 +85,7 @@ def post_event_body_two() -> dict:
     }
 
 
-@pytest.fixture
-def test_post_event_initial(post_event_body_one: dict) -> dict:
+def post_event(data: dict) -> dict:
 
     return {
         "httpMethod": "POST",
@@ -98,24 +97,7 @@ def test_post_event_initial(post_event_body_one: dict) -> dict:
                 }
             }
         },
-        "body": json.dumps(post_event_body_one),
-    }
-
-
-@pytest.fixture
-def test_post_event_second(post_event_body_two: dict) -> dict:
-
-    return {
-        "httpMethod": "POST",
-        "requestContext": {
-            "authorizer": {
-                "claims": {
-                    "cognito:username": "test_user",
-                    "email": "test@mail.com",
-                }
-            }
-        },
-        "body": json.dumps(post_event_body_two),
+        "body": json.dumps(data),
     }
 
 
@@ -274,9 +256,9 @@ def test_get_data___error(test_get_event: dict) -> None:
 
 @pytest.mark.usefixtures("_overrides")
 def test_post_data__initial_record(
-    test_post_event_initial: dict, db_record_one: dict
+    db_record_one: dict, post_event_body_one: dict
 ) -> None:
-    resp = main.lambda_handler(test_post_event_initial, None)
+    resp = main.lambda_handler(post_event(post_event_body_one), None)
     resp_body = json.loads(resp["body"])
 
     assert resp["statusCode"] == 200
@@ -288,9 +270,78 @@ def test_post_data__initial_record(
     assert response["Items"][0]["UserId"] == "test_user"
     assert response["Items"][0]["Date"] == db_record_one["date"]
 
+
+@pytest.mark.usefixtures("_overrides")
+def test_post_data__initial_record_date_value_error() -> None:
+    data = {
+        "body": {
+            "payload": {
+                "date": "",  # Error should be here
+                "utilities": {
+                    "gas": 20,
+                    "electricity": {"t1": 20, "t2": 30},
+                    "water": {
+                        "cold": {"kitchen": 20, "bathroom": 20},
+                        "hot": {"kitchen": 30, "bathroom": 30},
+                    },
+                },
+                "prices": {
+                    "gas": 10,
+                    "gas_distribution": 5,
+                    "electricity": {"t1": 10, "t2": 20},
+                    "water": {"cold": 10, "hot": 20},
+                    "housing": 10,
+                    "garbage": 10,
+                    "heat_service": 10,
+                    "heat_price": 10,
+                },
+            }
+        }
+    }
+    resp = main.lambda_handler(post_event(data), None)
+    resp_body = json.loads(resp["body"])
+    assert resp["statusCode"] == 400
+    assert resp_body["error"] == "ValueError"
+    assert resp_body["message"] == "Missing value for date"
+
+
+@pytest.mark.usefixtures("_overrides")
+def test_post_data__initial_record_t1_value_error() -> None:
+    data = {
+        "body": {
+            "payload": {
+                "date": "20250414202539828",
+                "utilities": {
+                    "gas": 20,
+                    "electricity": {"t1": None, "t2": 30},  # Error should be here
+                    "water": {
+                        "cold": {"kitchen": 20, "bathroom": 20},
+                        "hot": {"kitchen": 30, "bathroom": 30},
+                    },
+                },
+                "prices": {
+                    "gas": 10,
+                    "gas_distribution": 5,
+                    "electricity": {"t1": 10, "t2": 20},
+                    "water": {"cold": 10, "hot": 20},
+                    "housing": 10,
+                    "garbage": 10,
+                    "heat_service": 10,
+                    "heat_price": 10,
+                },
+            }
+        }
+    }
+    resp = main.lambda_handler(post_event(data), None)
+    resp_body = json.loads(resp["body"])
+    assert resp["statusCode"] == 400
+    assert resp_body["error"] == "ValueError"
+    assert resp_body["message"] == "Missing value for t1"
+
+
 @pytest.mark.usefixtures("_overrides")
 def test_post_data__second_record(
-    test_post_event_second: dict, db_record_one: dict, db_record_two: dict
+    db_record_one: dict, db_record_two: dict, post_event_body_two: dict
 ) -> None:
     # First record
     main.db.add(
@@ -301,7 +352,7 @@ def test_post_data__second_record(
         cost=db_record_one["cost"],
     )
 
-    resp = main.lambda_handler(test_post_event_second, None)
+    resp = main.lambda_handler(post_event(post_event_body_two), None)
     resp_body = json.loads(resp["body"])
 
     assert resp["statusCode"] == 200
@@ -313,3 +364,95 @@ def test_post_data__second_record(
     assert response["Count"] == 2
     assert response["Items"][1]["UserId"] == "test_user"
     assert response["Items"][1]["Date"] == db_record_two["date"]
+
+
+@pytest.mark.usefixtures("_overrides")
+def test_post_data__second_record_date_value_error(db_record_one: dict) -> None:
+    data = {
+        "body": {
+            "payload": {
+                "date": "",  # Error should be here
+                "utilities": {
+                    "gas": 20,
+                    "electricity": {"t1": 20, "t2": 30},
+                    "water": {
+                        "cold": {"kitchen": 20, "bathroom": 20},
+                        "hot": {"kitchen": 30, "bathroom": 30},
+                    },
+                },
+                "prices": {
+                    "gas": 10,
+                    "gas_distribution": 5,
+                    "electricity": {"t1": 10, "t2": 20},
+                    "water": {"cold": 10, "hot": 20},
+                    "housing": 10,
+                    "garbage": 10,
+                    "heat_service": 10,
+                    "heat_price": 10,
+                },
+            }
+        }
+    }
+
+    # First record
+    main.db.add(
+        p_key="test_user",
+        s_key=db_record_one["date"],
+        utilities=db_record_one["utilities"],
+        prices=db_record_one["prices"],
+        cost=db_record_one["cost"],
+    )
+    response = main.db.get_all("test_user")
+    assert response["Count"] == 1
+
+    resp = main.lambda_handler(post_event(data), None)
+    resp_body = json.loads(resp["body"])
+    assert resp["statusCode"] == 400
+    assert resp_body["error"] == "ValueError"
+    assert resp_body["message"] == "Missing value for date"
+
+
+@pytest.mark.usefixtures("_overrides")
+def test_post_data__second_record_t1_value_error(db_record_one: dict) -> None:
+    data = {
+        "body": {
+            "payload": {
+                "date": "20250414202539828",
+                "utilities": {
+                    "gas": 20,
+                    "electricity": {"t1": None, "t2": 30},  # Error should be here
+                    "water": {
+                        "cold": {"kitchen": 20, "bathroom": 20},
+                        "hot": {"kitchen": 30, "bathroom": 30},
+                    },
+                },
+                "prices": {
+                    "gas": 10,
+                    "gas_distribution": 5,
+                    "electricity": {"t1": 10, "t2": 20},
+                    "water": {"cold": 10, "hot": 20},
+                    "housing": 10,
+                    "garbage": 10,
+                    "heat_service": 10,
+                    "heat_price": 10,
+                },
+            }
+        }
+    }
+
+    # First record
+    main.db.add(
+        p_key="test_user",
+        s_key=db_record_one["date"],
+        utilities=db_record_one["utilities"],
+        prices=db_record_one["prices"],
+        cost=db_record_one["cost"],
+    )
+    response = main.db.get_all("test_user")
+    assert response["Count"] == 1
+
+    resp = main.lambda_handler(post_event(data), None)
+    resp_body = json.loads(resp["body"])
+    assert resp["statusCode"] == 400
+    assert resp_body["error"] == "ValueError"
+    assert resp_body["message"] == "Missing value for t1"
